@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.example.uscramblegame.data.MAX_NO_OF_WORDS
 import com.example.uscramblegame.data.SCORE_INCREASE
 import com.example.uscramblegame.data.allWords
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +14,8 @@ import kotlinx.coroutines.flow.update
 
 class GameViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(GameUiState())
-    val uiState: StateFlow<GameUiState> = _uiState.asStateFlow() // The asStateFlow() makes this mutable state flow a read-only state flow.
+    val uiState: StateFlow<GameUiState> =
+        _uiState.asStateFlow() // The asStateFlow() makes this mutable state flow a read-only state flow.
 
     private lateinit var currentWord: String
     private var usedWords: MutableSet<String> = mutableSetOf()
@@ -67,13 +69,28 @@ class GameViewModel : ViewModel() {
     }
 
     private fun updateGameState(updatedScore: Int) {
-        _uiState.update { currentState ->
-            currentState.copy(
-                isGuessedWordWrong = false,
-                currentScrambledWord = pickRandomWordAndShuffle(),
-                score = updatedScore,
-                currentWordCount = currentState.currentWordCount.inc()
-            )
+        if (usedWords.size == MAX_NO_OF_WORDS) {
+            _uiState.update { currentState ->
+                currentState.copy(
+                    isGuessedWordWrong = false,
+                    score = updatedScore,
+                    isGameOver = true
+                )
+            }
+        } else {
+            _uiState.update { currentState ->
+                currentState.copy(
+                    isGuessedWordWrong = false,
+                    currentScrambledWord = pickRandomWordAndShuffle(),
+                    score = updatedScore,
+                    currentWordCount = currentState.currentWordCount.inc()
+                )
+            }
         }
+    }
+
+    fun skipWord() {
+        updateGameState(_uiState.value.score)
+        updateUserGuess("")
     }
 }
